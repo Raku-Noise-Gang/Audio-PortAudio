@@ -1,0 +1,26 @@
+#!/usr/bin/env perl6
+
+use v6.c;
+use NativeCall;
+use lib 'lib';
+use Audio::Portaudio;
+
+sub callback(CArray $inputbuf, CArray $outputbuf, int32 $framecount, Audio::PortAudio::StreamCallbackTimeInfo $callback-time-info, int32 $cb-flags, CArray $cb-user-data) returns int32 {
+
+  # fails with: MoarVM panic: Internal error: Unwound entire stack and missed handler
+  #$outputbuf[0] = 0.0e0;
+
+  # this works for a while and then: terminated by signal SIGSEGV (Address boundary error)
+  my $samples = nativecast(CArray[num32], $outputbuf);
+  $samples[$_] = 0.0e0 for ^$framecount;
+  $samples[0] = 1.0e0;
+
+  return 0;
+}
+
+multi sub MAIN() {
+	my $pa = Audio::PortAudio.new;
+	my $st = $pa.open-default-stream-with-callback(0, 1, Audio::PortAudio::Float32, 44100, 256, &callback);
+	$st.start;
+  loop { sleep 1 }
+}
