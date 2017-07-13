@@ -990,6 +990,16 @@ class Audio::PortAudio {
         }
         $stream[0];
     }
+
+    method open-default-stream-with-callback(Int $input = 0, Int $output = 2, StreamFormat $format = StreamFormat::Float32, Int $sample-rate = 44100, Int $frames-per-buffer = 256, &callback () = Code) returns Stream {
+        my CArray[Stream] $stream = CArray[Stream].new;
+        $stream[0] = Stream.new;
+        my $rc = Pa_OpenDefaultStream($stream,$input,$output,$format.Int, Num($sample-rate), $frames-per-buffer, &callback, CArray);
+        if $rc != 0 {
+            X::OpenError.new(code => $rc, error-text => self.error-text($rc)).throw;
+        }
+        $stream[0];
+    }
     
     sub Pa_OpenStream(CArray[Stream] $stream,
                       StreamParameters $in-params,
