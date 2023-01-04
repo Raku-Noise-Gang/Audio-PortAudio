@@ -93,11 +93,10 @@ purposes.
     method initialize( --> Bool )
 
 This starts the portaudio service and will initialise all of the host API drivers
-found, which may (depending on the configuration,) cause the drivers to emit some
-output (typically ALSA and JACK will do this.) You probably don't need to call this
-yourself as it is called by the constructor, though may be necessary after
-C<terminate> if you didn't actually end your program. If there was a problem
-initializing the library then an exception will be thrown.
+found. You probably don't need to call this yourself as it is called by the
+constructor, though may be necessary after C<terminate> if you didn't actually end
+your program. If there was a problem initializing the library then an exception
+will be thrown.
 
 
 =head2 method terminate
@@ -899,10 +898,28 @@ class Audio::PortAudio {
         Pa_GetVersionText();
     }
 
-    sub Pa_Initialize( --> int32 )  is native('portaudio',v2) {...}
+    sub Pa_Initialize( --> int32 )  is native('portaudio',v2) {...};
+
+    # Kill the noise from Pa_Initialize()
+    sub dup(int32 $fhandle --> int32) is native { * };
+    sub dup2(int32 $fhandle1, int32 $fhandle2 --> int32) is native { * };
+    sub open(Str $path, int32 $mode --> int32) is native { * };
 
     method initialize( --> Bool )  {
-        my $rc = Pa_Initialize();
+        my $rc;
+        if $*DISTRO.is-win {
+            $rc = Pa_Initialize();
+        } else {
+            my int32 $O_WRONLY = 2;
+            my int32 $STDERR = $*ERR.native-descriptor;
+
+            my int32 $saved-stderr = dup($STDERR);
+            my int32 $dev-null = open("/dev/null", $O_WRONLY);
+            dup2($dev-null, $STDERR);
+            $rc = Pa_Initialize();
+            dup2($saved-stderr, $STDERR);
+        }
+
         if $rc != 0 {
             X::PortAudio.new(code => $rc, what => "initialising").throw;
         }
