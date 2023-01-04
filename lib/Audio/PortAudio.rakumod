@@ -825,13 +825,13 @@ class Audio::PortAudio {
         sub Pa_IsStreamStopped(Stream $stream --> int32 )  is native('portaudio', v2) { * }
 
         method stopped( --> Bool )  {
-            Bool(Pa_IsStreamStopped(self));
+            so Pa_IsStreamStopped(self);
         }
 
         sub Pa_IsStreamActive(Stream $stream --> int32 )  is native('portaudio', v2) { * }
 
         method active( --> Bool )  {
-            Bool(Pa_IsStreamActive(self));
+            so Pa_IsStreamActive(self);
         }
 
         sub Pa_GetStreamReadAvailable( Stream $stream --> int32 )  is native('portaudio', v2) { * }
